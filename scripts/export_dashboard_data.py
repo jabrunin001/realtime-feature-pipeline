@@ -45,10 +45,14 @@ def main() -> None:
         "rebuffer_hist": hist("rebuffer_count_5m", 8) if rows else {},
         "device": cat("device"), "network": cat("network_type"),
         "model": {"name": "rebuffer_risk", "version": 3, "registry": "MLflow",
-                  "note": "Trained on the synthetic generator's sessions. The generator's "
-                          "rebuffer-risk label is effectively single-class on this data, so "
-                          "ROC-AUC is undefined (NaN) — this snapshot demonstrates the streaming, "
-                          "online/offline parity, and registry plumbing, not a tuned model."},
+                  "note": "The model is trained on the synthetic generator's sessions. That "
+                          "generator labels rebuffer risk in a way that comes out almost entirely "
+                          "one class on this data, so ROC-AUC can't be computed and shows as NaN. "
+                          "What this snapshot proves is the plumbing around the model: features "
+                          "streamed in real time, the online and offline stores agreeing to the "
+                          "decimal, and the model versioned in MLflow next to the feature schema "
+                          "it expects. The number that matters here is the consistency match rate, "
+                          "not an accuracy score."},
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("window.DATA = " + json.dumps(data, indent=2) + ";\n")

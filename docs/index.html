@@ -20,28 +20,36 @@
 </div></nav>
 <main class="wrap">
   <section class="panel active" id="overview">
+    <div class="card" style="margin-bottom:1.5rem"><h2><i data-lucide="info"></i>What this is</h2>
+      <p style="color:var(--slate)">This pipeline answers one awkward question that breaks a lot of ML systems: does the model see the exact same features when it trains as when it serves live predictions? It generates synthetic viewing-session events (the kind a streaming service emits), runs them through Spark Structured Streaming to compute features, and writes every feature row to two places at once. Redis holds the latest values for fast serving; Delta Lake keeps the full history for training. The headline number below, a 1.0000 match rate, is the proof that those two stores agree to the decimal.</p>
+      <p class="note" style="margin-top:.8rem">One honest caveat up front: the model itself is a placeholder. The synthetic data doesn't give it a real signal to learn (the Model tab explains why). The interesting part here is the plumbing, not the predictions.</p></div>
     <div class="grid kpis" id="kpis"></div>
-    <div class="card"><h2><i data-lucide="bar-chart-3"></i>Rebuffer events per session (5-min window)</h2>
-      <p class="note">Distribution of <span class="mono">rebuffer_count_5m</span> across the online feature store. Most sessions stream clean; a long tail rebuffers.</p>
+    <div class="card"><h2><i data-lucide="bar-chart-3"></i>Rebuffer events per session</h2>
+      <p class="note">How many times each session stalled to rebuffer in a five-minute window (<span class="mono">rebuffer_count_5m</span>), counted across the live online store. Most sessions stream clean; a long tail keeps stalling. This is exactly the kind of signal a streaming team watches to catch a bad CDN or a flaky encode.</p>
       <div class="chart-box"><canvas id="rebuf"></canvas></div></div>
   </section>
   <section class="panel" id="features">
     <div class="grid two">
-      <div class="card"><h2><i data-lucide="monitor-smartphone"></i>Sessions by device</h2><div class="chart-box"><canvas id="device"></canvas></div></div>
-      <div class="card"><h2><i data-lucide="wifi"></i>Sessions by network</h2><div class="chart-box"><canvas id="network"></canvas></div></div>
+      <div class="card"><h2><i data-lucide="monitor-smartphone"></i>Sessions by device</h2>
+        <p class="note">Which device each session streamed on. The generator spreads sessions fairly evenly so the features stay varied.</p>
+        <div class="chart-box"><canvas id="device"></canvas></div></div>
+      <div class="card"><h2><i data-lucide="wifi"></i>Sessions by network</h2>
+        <p class="note">The connection each session used. Cellular sessions tend to rebuffer more, which is the sort of thing a real model would lean on.</p>
+        <div class="chart-box"><canvas id="network"></canvas></div></div>
     </div>
-    <div class="card" style="margin-top:1rem"><h2><i data-lucide="list"></i>Feature schema (per session)</h2>
-      <p class="note">15 features computed by the Spark streaming job and written to both stores.</p>
+    <div class="card" style="margin-top:1rem"><h2><i data-lucide="list"></i>The features, per session</h2>
+      <p class="note">These 15 values are what the Spark job computes for every session and writes to both stores. They cover rebuffering, buffer health, bitrate, seeks, pauses, and where the session is coming from.</p>
       <div id="schema"></div></div>
   </section>
   <section class="panel" id="model">
     <div class="card"><h2><i data-lucide="brain"></i>Model registry</h2>
+      <p class="note">The trained model lives in MLflow, versioned alongside the exact feature schema it expects. That versioning is what lets serving load the right model and refuse a mismatched one.</p>
       <table id="modelTbl"></table>
       <p class="note" id="modelNote" style="margin-top:1rem"></p></div>
   </section>
   <section class="panel" id="consistency">
-    <div class="card"><h2><i data-lucide="git-compare"></i>Online vs offline — zero skew</h2>
-      <p class="note">Online predictions (served from Redis) compared to offline calculations (Delta) at float tolerance. This is the point of the project: the model sees the same features in training and serving.</p>
+    <div class="card"><h2><i data-lucide="git-compare"></i>Online vs offline, zero skew</h2>
+      <p class="note">For a batch of sessions, the prediction served live from Redis is compared against the same prediction recomputed from the Delta history, at float tolerance. A 1.0000 match rate means the model sees identical features in training and in production. Train/serve skew is one of the quietest ways an ML system goes wrong, so proving it's zero is the whole reason this project exists.</p>
       <div class="grid kpis" id="consKpis"></div></div>
   </section>
   <section class="panel" id="lineage">
@@ -52,7 +60,7 @@
         <div class="node accent">Feature store<small>Redis + Delta</small></div><span class="arrow">→</span>
         <div class="node">FastAPI<small>serving</small></div>
       </div>
-      <p class="note" style="margin-top:1rem">The streaming job dual-writes each feature row to Redis (online, low-latency serving) and Delta Lake on MinIO (offline, point-in-time-correct training). The same computation feeds both, which is what keeps train and serve in lockstep.</p>
+      <p class="note" style="margin-top:1rem">The streaming job computes each feature row once and writes it to two places: Redis, for the low-latency lookups serving needs, and Delta Lake on MinIO, which keeps the full history so training can ask "what did this feature look like at the moment of that event." Because one computation feeds both stores, training and serving can't drift apart. That is the whole point.</p>
     </div>
   </section>
 </main>
