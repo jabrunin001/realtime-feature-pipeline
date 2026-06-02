@@ -1,0 +1,62 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>realtime-feature-pipeline · dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head><body>
+<header class="head"><div class="grad"></div><div class="wrap">
+  <h1>realtime-feature-pipeline</h1>
+  <p class="sub">Streaming features with zero train/serve skew · Kafka → Spark → Redis/Delta → FastAPI</p>
+  <div class="meta"><span>Snapshot of a real run · <span id="gen"></span></span>
+    <a href="https://github.com/jabrunin001/realtime-feature-pipeline" target="_blank" rel="noopener">View repo ↗</a></div>
+</div></header>
+<nav class="tabs"><div class="wrap" role="tablist">
+  <button class="tab active" data-tab="overview" role="tab" aria-selected="true"><i data-lucide="layout-grid"></i>Overview</button>
+  <button class="tab" data-tab="features" role="tab" aria-selected="false"><i data-lucide="bar-chart-3"></i>Features</button>
+  <button class="tab" data-tab="model" role="tab" aria-selected="false"><i data-lucide="brain"></i>Model</button>
+  <button class="tab" data-tab="consistency" role="tab" aria-selected="false"><i data-lucide="git-compare"></i>Consistency</button>
+  <button class="tab" data-tab="lineage" role="tab" aria-selected="false"><i data-lucide="git-pull-request"></i>Lineage</button>
+</div></nav>
+<main class="wrap">
+  <section class="panel active" id="overview">
+    <div class="grid kpis" id="kpis"></div>
+    <div class="card"><h2><i data-lucide="bar-chart-3"></i>Rebuffer events per session (5-min window)</h2>
+      <p class="note">Distribution of <span class="mono">rebuffer_count_5m</span> across the online feature store. Most sessions stream clean; a long tail rebuffers.</p>
+      <div class="chart-box"><canvas id="rebuf"></canvas></div></div>
+  </section>
+  <section class="panel" id="features">
+    <div class="grid two">
+      <div class="card"><h2><i data-lucide="monitor-smartphone"></i>Sessions by device</h2><div class="chart-box"><canvas id="device"></canvas></div></div>
+      <div class="card"><h2><i data-lucide="wifi"></i>Sessions by network</h2><div class="chart-box"><canvas id="network"></canvas></div></div>
+    </div>
+    <div class="card" style="margin-top:1rem"><h2><i data-lucide="list"></i>Feature schema (per session)</h2>
+      <p class="note">15 features computed by the Spark streaming job and written to both stores.</p>
+      <div id="schema"></div></div>
+  </section>
+  <section class="panel" id="model">
+    <div class="card"><h2><i data-lucide="brain"></i>Model registry</h2>
+      <table id="modelTbl"></table>
+      <p class="note" id="modelNote" style="margin-top:1rem"></p></div>
+  </section>
+  <section class="panel" id="consistency">
+    <div class="card"><h2><i data-lucide="git-compare"></i>Online vs offline — zero skew</h2>
+      <p class="note">Online predictions (served from Redis) compared to offline calculations (Delta) at float tolerance. This is the point of the project: the model sees the same features in training and serving.</p>
+      <div class="grid kpis" id="consKpis"></div></div>
+  </section>
+  <section class="panel" id="lineage">
+    <div class="card"><h2><i data-lucide="git-pull-request"></i>Pipeline lineage</h2>
+      <div class="lin">
+        <div class="node">Kafka<small>viewing-events</small></div><span class="arrow">→</span>
+        <div class="node">Spark<small>Structured Streaming</small></div><span class="arrow">→</span>
+        <div class="node accent">Feature store<small>Redis + Delta</small></div><span class="arrow">→</span>
+        <div class="node">FastAPI<small>serving</small></div>
+      </div>
+      <p class="note" style="margin-top:1rem">The streaming job dual-writes each feature row to Redis (online, low-latency serving) and Delta Lake on MinIO (offline, point-in-time-correct training). The same computation feeds both, which is what keeps train and serve in lockstep.</p>
+    </div>
+  </section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="data.js"></script><script src="charts.js"></script><script src="app.js"></script>
+</body></html>

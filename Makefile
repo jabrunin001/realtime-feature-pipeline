@@ -5,7 +5,7 @@ down:      ; docker compose down -v
 topic:     ; docker compose exec kafka kafka-topics --create --topic viewing-events \
                --bootstrap-server localhost:9092 --partitions 3 --replication-factor 1 || true
 seed:      ; docker compose exec serving python -m generator.generate --sessions 200 --rate 200
-stream:    ; docker compose exec serving spark-submit \
+stream:    ; docker compose exec -e PYTHONPATH=/app serving spark-submit \
                --packages io.delta:delta-spark_2.12:3.2.0,org.apache.hadoop:hadoop-aws:3.3.4,org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1 \
                streaming/job.py
 train:     ; docker compose exec serving python -m training.train
