@@ -10,3 +10,4 @@ mlruns/
 .pytest_cache/
 build/
 dist/
+*.log
